@@ -16,6 +16,11 @@ Features:
 """
 
 from __future__ import annotations
+import os
+import pytesseract
+
+if os.name == "nt":  # Windows only
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 import streamlit as st
 from PIL import Image
