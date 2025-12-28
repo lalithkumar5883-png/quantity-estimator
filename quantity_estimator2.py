@@ -18,11 +18,19 @@ Features:
 from __future__ import annotations
 import os
 import pytesseract
+import streamlit as st
+
+try:
+    import cv2
+except Exception as e:
+    st.error("OpenCV failed to load on Streamlit Cloud")
+    st.exception(e)
+    st.stop()
 
 if os.name == "nt":  # Windows only
     pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-import streamlit as st
+
 from PIL import Image
 import numpy as np
 import pytesseract
