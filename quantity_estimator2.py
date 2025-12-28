@@ -237,33 +237,33 @@ class ImageProcessor:
     """Handles image preprocessing and OCR operations"""
     
     @staticmethod
-    def preprocess_for_ocr(pil_img: Image.Image, 
-                           denoise_strength: int = 9,
-                           threshold_block_size: int = 35) -> np.ndarray:
-        """Advanced preprocessing pipeline for OCR"""
-        img = np.array(pil_img.convert("RGB"))
-        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        
-        # Contrast enhancement using CLAHE
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        gray = clahe.apply(gray)
-        
-        # Bilateral filter for edge-preserving denoising
-        gray = cv2.bilateralFilter(gray, denoise_strength, 75, 75)
-        
-        # Adaptive thresholding
-        thresh = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY, threshold_block_size, 5
-        )
-        
-        # Morphological operations to clean up
-        kernel = np.ones((2, 2), np.uint8)
-        thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-        thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-        
-        return thresh
-    
+def preprocess_for_ocr(
+    pil_img: Image.Image,
+    denoise_strength: int = 9,
+    threshold_block_size: int = 35
+) -> Image.Image:
+    """
+    Cloud-safe OCR preprocessing using PIL (no OpenCV)
+    """
+
+    # Convert to grayscale
+    img = ImageOps.grayscale(pil_img)
+
+    # Improve contrast (replacement for CLAHE)
+    img = ImageOps.autocontrast(img)
+
+    # Denoising (replacement for bilateral filter)
+    if denoise_strength > 0:
+        img = img.filter(ImageFilter.MedianFilter(size=3))
+
+    # Sharpen text edges
+    img = img.filter(ImageFilter.SHARPEN)
+
+    # Optional binary thresholding (replacement for adaptiveThreshold)
+    img = img.point(lambda x: 255 if x > 160 else 0)
+
+    return img
+
     @staticmethod
     def extract_text_with_confidence(pil_img: Image.Image) -> Tuple[str, List[Dict]]:
         """Extract text with confidence scores"""
