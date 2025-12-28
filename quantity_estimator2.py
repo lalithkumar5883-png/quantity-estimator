@@ -20,22 +20,17 @@ import os
 import pytesseract
 import streamlit as st
 
-try:
-    import cv2
-except Exception as e:
-    st.error("OpenCV failed to load on Streamlit Cloud")
-    st.exception(e)
-    st.stop()
-
 if os.name == "nt":  # Windows only
     pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+from PIL import Image, ImageFilter, ImageOps
+import pytesseract
 
 
 from PIL import Image
 import numpy as np
 import pytesseract
 import re
-import cv2
+
 import pandas as pd
 import io
 import json
@@ -52,6 +47,17 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, cm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+def preprocess_image(image: Image.Image) -> Image.Image:
+    # Convert to grayscale
+    gray = ImageOps.grayscale(image)
+
+    # Improve contrast
+    gray = ImageOps.autocontrast(gray)
+
+    # Slight sharpening
+    gray = gray.filter(ImageFilter.SHARPEN)
+
+    return gray
 
 # ============================================================================
 # CONFIGURATION & CONSTANTS
