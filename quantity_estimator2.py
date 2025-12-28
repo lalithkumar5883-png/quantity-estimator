@@ -235,50 +235,54 @@ class Project:
 
 class ImageProcessor:
     """Handles image preprocessing and OCR operations"""
-    
-    @staticmethod
-def preprocess_for_ocr(
-    pil_img: Image.Image,
-    denoise_strength: int = 9,
-    threshold_block_size: int = 35
-) -> Image.Image:
-    """
-    Cloud-safe OCR preprocessing using PIL (no OpenCV)
-    """
-
-    # Convert to grayscale
-    img = ImageOps.grayscale(pil_img)
-
-    # Improve contrast (replacement for CLAHE)
-    img = ImageOps.autocontrast(img)
-
-    # Denoising (replacement for bilateral filter)
-    if denoise_strength > 0:
-        img = img.filter(ImageFilter.MedianFilter(size=3))
-
-    # Sharpen text edges
-    img = img.filter(ImageFilter.SHARPEN)
-
-    # Optional binary thresholding (replacement for adaptiveThreshold)
-    img = img.point(lambda x: 255 if x > 160 else 0)
-
-    return img
 
     @staticmethod
-    def extract_text_with_confidence(pil_img: Image.Image) -> Tuple[str, List[Dict]]:
+    def preprocess_for_ocr(
+        pil_img: Image.Image,
+        denoise_strength: int = 9,
+        threshold_block_size: int = 35
+    ) -> Image.Image:
+        """
+        Cloud-safe OCR preprocessing using PIL (no OpenCV)
+        """
+
+        # Convert to grayscale
+        img = ImageOps.grayscale(pil_img)
+
+        # Improve contrast (replacement for CLAHE)
+        img = ImageOps.autocontrast(img)
+
+        # Denoising (replacement for bilateral filter)
+        if denoise_strength > 0:
+            img = img.filter(ImageFilter.MedianFilter(size=3))
+
+        # Sharpen text edges
+        img = img.filter(ImageFilter.SHARPEN)
+
+        # Optional binary thresholding (replacement for adaptiveThreshold)
+        img = img.point(lambda x: 255 if x > 160 else 0)
+
+        return img
+
+    @staticmethod
+    def extract_text_with_confidence(
+        pil_img: Image.Image
+    ) -> Tuple[str, List[Dict]]:
         """Extract text with confidence scores"""
+
         preprocessed = ImageProcessor.preprocess_for_ocr(pil_img)
         config = r'--oem 3 --psm 6'
-        
+
         try:
             data = pytesseract.image_to_data(
-                preprocessed, config=config, 
+                preprocessed,
+                config=config,
                 output_type=pytesseract.Output.DICT
             )
-            
+
             words_with_confidence = []
             text_parts = []
-            
+
             for i, word in enumerate(data['text']):
                 if word.strip():
                     conf = int(data['conf'][i])
@@ -291,26 +295,28 @@ def preprocess_for_ocr(
                         'height': data['height'][i]
                     })
                     text_parts.append(word)
-            
+
             return " ".join(text_parts), words_with_confidence
-            
+
         except Exception as e:
             st.error(f"OCR processing failed: {str(e)}")
             return "", []
-    
+
     @staticmethod
     def detect_scale(text: str) -> Optional[Tuple[float, str]]:
         """Attempt to detect scale notation in the plan"""
+
         scale_patterns = [
-            r'1\s*:\s*(\d+)',  # 1:100, 1:50
+            r'1\s*:\s*(\d+)',               # 1:100, 1:50
             r'scale\s*[=:]\s*1\s*:\s*(\d+)',
             r'(\d+)\s*mm\s*=\s*(\d+)\s*m',
         ]
-        
+
         for pattern in scale_patterns:
             match = re.search(pattern, text.lower())
             if match:
                 return float(match.group(1)), match.group(0)
+
         return None
 
 def clean_ocr_text(text: str) -> str:
